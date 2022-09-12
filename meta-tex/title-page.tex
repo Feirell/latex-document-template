@@ -1,0 +1,30 @@
+\begin{titlepage} % Suppresses displaying the page number on the title page and the subsequent page counts as page 1
+
+    %\raggedright % Right align the title page
+
+    \rule{1pt}{\textheight} % Vertical line
+    \hspace{0.05\textwidth} % Whitespace between the vertical line and title page text
+    \parbox[b]{0.97\textwidth}{ % Paragraph box for holding the title page text, adjust the width to move the title page left or right on the page
+        \RaggedRight % Right align the title page
+
+        {\fontsize{23pt}{23pt}\selectfont\textbf{Ein Schlüssiger Titel mit vielen Worten damit der Inhalt voll Umfasst wird}
+        \par}
+        \bigskip
+        {\large\textit{Forschungsarbeit in dem Bereich \\ der Forschung und der Wissenschaft}\par} % Subtitle or further description
+        \bigskip
+        {\large\textsc{Max Mustermann}\par} % Author name, lower case for consistent small caps
+
+        \vspace{0.25\textheight} % Whitespace between the title block and the publisher
+
+        {\noindent Forschungsinstitut} % Publisher and logo
+        \bigskip
+    }
+
+
+    \afterpage{
+        \null
+        \thispagestyle{empty}
+        \newpage
+    }
+
+\end{titlepage}

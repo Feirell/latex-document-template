@@ -1,0 +1,37 @@
+name: Build LaTeX
+
+on:
+  push:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build LaTeX
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build LaTeX and build images
+        uses: docker/build-push-action@v3
+        with:
+          push: false
+          target: build-results
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: multi.Dockerfile
+          outputs: type=local,dest=build-res
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: build-res
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: Build LaTeX ${{ github.event.head_commit.message }}

@@ -1,0 +1,27 @@
+@startuml
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam BoxPadding 60
+skinparam SequenceBoxBackgroundColor white
+skinparam SequenceBoxBorderColor #aaaaaa
+skinparam defaultFontName Arial
+
+actor User
+
+box Client
+participant "Client\nInstance" as client
+end box
+
+box Server
+participant "Server\nInstance" as server
+end box
+
+autonumber 1.1
+client ->> server++: Daten werden\ngesendet
+|||
+server ->> client++: Antwort wird\ngesendet
+deactivate server
+|||
+deactivate client
+@enduml

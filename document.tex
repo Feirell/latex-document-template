@@ -1,0 +1,45 @@
+\documentclass[11pt,a4paper]{article}
+
+% Dependencies
+\input{meta-tex/dependencies}
+
+% Configuration
+\input{meta-tex/configuration}
+
+% Custom Commands
+\input{meta-tex/custom-commands}
+
+% Source Code rendering
+\input{meta-tex/source-code}
+
+% Bib Source
+\addbibresource{document.bib}
+
+\begin{document}
+
+    \input{meta-tex/title-page}
+
+
+    \tableofcontents
+    \newpage
+
+    \setlength{\parindent}{0em}
+    \setlength{\parskip}{1em}
+
+
+    \input{chapters/intro/intro}
+
+    \input{chapters/intro/goal}
+
+
+    \newpage
+
+    \listoffigures
+
+    \listoftables
+
+    \listoflistings
+
+    \printbibliography[title=Literaturverzeichnis]
+
+\end{document}
