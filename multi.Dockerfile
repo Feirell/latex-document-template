@@ -5,65 +5,86 @@
 # and https://docs.docker.com/engine/reference/builder/
 # for general information
 
-##
-## #####################
-## BASE IMAGES
-## #####################
-##
+# docker1234123123 is my account, I am using it as a build storage, so the base images don't need
+# to be cached or otherwise rebuild on each new build.
+# The GitHub CI is the main problem in this regard
+# If you don't want to use those you can build them yourself and add reference here.
+# Either by copying them into this Dockefile and then using the as <NAME> for the from or by building them seperatly.
 
-FROM ubuntu:20.04 as inkscape-img
-# version is pinned to have a more stable result
+# docker build -f docker-images/plantuml/Dockerfile -t plantuml:v1.2022.0 docker-images/plantuml
+# then replace
+# FROM docker1234123123/plantuml:v1.2022.0 as plantuml-files
+# with
+# FROM plantuml:v1.2022.0 as plantuml-files
 
-ARG DEBIAN_FRONTEND="noninteractive"
-# this version was found by using apt-cache policy inkscape to find the version apt tries to install
-ARG INKSCAPE_VERSION="1:1.2*"
 
-RUN apt-get update && \
-  apt-get install -y software-properties-common && \
-  add-apt-repository ppa:inkscape.dev/stable && \
-  apt-get update && \
-  apt-get install -y inkscape=$INKSCAPE_VERSION && \
-  apt-get remove -y software-properties-common && \
-  apt-get autoremove -y && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
-
-FROM ubuntu:20.04 as plantuml-img
-
-ARG DEBIAN_FRONTEND="noninteractive"
-# found by choosing one of the github tags
-ARG PLANTUML_VERSION="1.2022.0"
-
-RUN apt-get update && \
-   apt-get install -y curl openjdk-17-jre && \
-   curl -L https://github.com/plantuml/plantuml/releases/download/v$PLANTUML_VERSION/plantuml-$PLANTUML_VERSION.jar -o /etc/plantuml.jar && \
-   apt-get remove -y curl && \
-   apt-get autoremove -y && \
-   apt-get clean && \
-   rm -rf /var/lib/apt/lists/* && \
-   echo "#!/bin/bash" >> /bin/plantuml && \
-   echo "java -jar /etc/plantuml.jar -charset UTF-8 \$*" >> /bin/plantuml && \
-   chmod +x /bin/plantuml
-
-##
-## #####################
-## ACTUAL BUILD STAGES
-## #####################
-##
-
-FROM plantuml-img as plantuml-files
+FROM docker1234123123/plantuml:v1.2022.0 as plantuml-files
 
 COPY plant-diagrams /plantfiles/
 
 RUN plantuml -tsvg /plantfiles/*.plant
 
-FROM inkscape-img as plantuml-pdfs
+FROM docker1234123123/inkscape:v1.2 as plantuml-pdfs
 
 COPY --from=plantuml-files /plantfiles/*.svg /svgs/
 
 RUN inkscape --export-type=pdf /svgs/*.svg
 
-FROM texlive/texlive:TL2021-historic as latex
+FROM node:18.12 as latex-with-old-diff
+
+ARG PREVIOUS_IDENTIFIER="previous-version"
+ARG CURRENT_IDENTIFIER="working"
+
+WORKDIR /versions
+
+COPY .               ./working
+COPY ./write-diff.js ./write-diff.js
+
+# You can use a git tag, git hash, "working", "previous-version" and "current-version"
+# to denote the last and current version
+RUN node write-diff.js $PREVIOUS_IDENTIFIER $CURRENT_IDENTIFIER
+
+FROM docker1234123123/texlive:v2021 as latex-diff-tex
+
+WORKDIR /latex-document
+
+COPY --from=latex-with-old-diff \
+     /versions ./
+
+RUN ./todo.bash
+
+FROM docker1234123123/texlive:v2021 as latex-diff-build
+
+ARG ENTRY_FILE=document
+
+WORKDIR /latex-document
+
+COPY *.bib *.tex               ./
+COPY medien                    ./medien
+COPY chapters                  ./chapters
+COPY meta-tex                  ./meta-tex
+COPY --from=plantuml-pdfs \
+     /svgs/*.pdf   ./medien/plant/
+COPY --from=latex-diff-tex \
+     /latex-document/diff   ./
+COPY --from=latex-diff-tex \
+     /latex-document/delta.txt ./delta.txt
+
+RUN latexmk \
+      -pdf \
+      -shell-escape \
+      -file-line-error \
+      -halt-on-error \
+      -interaction=nonstopmode \
+      -aux-directory=build \
+      -output-directory=build \
+      $ENTRY_FILE.tex && \
+    mv build/$ENTRY_FILE.pdf build/${ENTRY_FILE}-diff-$(cat delta.txt).pdf
+
+
+FROM docker1234123123/texlive:v2021 as latex-build
+
+ARG ENTRY_FILE=document
 
 WORKDIR /latex-document
 
@@ -82,10 +103,14 @@ RUN latexmk \
       -interaction=nonstopmode \
       -aux-directory=build \
       -output-directory=build \
-      document.tex
+      $ENTRY_FILE.tex
+
 
 FROM scratch as build-results
 
+ARG ENTRY_FILE=document
+
 # collect all results in the scratch image and then write them back to the file system
 # with the --output type=local,dest=/some/path
-COPY --from=latex /latex-document/build/document.pdf .
+COPY --from=latex-build      /latex-document/build/$ENTRY_FILE.pdf .
+COPY --from=latex-diff-build /latex-document/build/${ENTRY_FILE}-diff-*.pdf .

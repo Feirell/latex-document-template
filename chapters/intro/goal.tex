@@ -13,6 +13,24 @@ Beispielweise wie man einen neuen Absatz beginnt oder eine Bild einfügt.
     \label{fig:server-diagram}
 \end{figure}
 
+\begin{figure}
+\centering
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{medien/render-shots/front}
+  \caption{A subfigure}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{medien/render-shots/top}
+  \caption{A subfigure}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{A figure with two subfigures and a caption}
+\label{fig:test}
+\end{figure}
+
 % Die \FloatBarrier erlaubt Bilder zu zwingen spätestens an dieser Stelle zu erscheinen
 
 Oder wie man Abschnitte referenziert \refsec{sec:goal} oder das eben eingefügte Bild \refimg{fig:server-diagram}.

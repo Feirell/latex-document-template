@@ -2,6 +2,10 @@
 
 ## Building
 
+> If you encounter a build error try commenting the line 
+> `COPY --from=latex-diff-build /latex-document/build/${ENTRY_FILE}-diff-*.pdf .` in the
+> multi.Dockerfile to test if the error is raised while generating the diff file which is rather unstable
+
 _`[WIN]` Windows only steps, all commands are to be run in the WSL Linux distribution_
 
 ### Installation
@@ -40,3 +44,21 @@ _`[WIN]` Windows only steps, all commands are to be run in the WSL Linux distrib
   ```
   The initial build is somewhat slow, but all subsequent build are much faster (around 30 seconds for tex => pdf)
   You can use `--progress=plain` to force the full output of the build. 
+
+
+Example bash script
+
+```bash
+#! /usr/bin/bash
+
+export WIN=/mnt/c/Users/Flo/projects/$1/
+export LIN=/root/mirrors/$1/
+
+mkdir -p $LIN
+
+rsync -vtr --exclude /.git --exclude /.idea --exclude /dist --exclude lib $WIN $LIN
+
+docker buildx build --target $2 --output type=local,dest=$WIN --file $LIN/multi.Dockerfile $LIN
+```
+
+Called with `./mirror bachelor-thesis-document build-results`

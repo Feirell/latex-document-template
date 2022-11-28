@@ -2,9 +2,8 @@ name: Build LaTeX
 
 on:
   push:
-    branches: [ main ]
-
-  workflow_dispatch:
+    tags:
+      - v*
 
 jobs:
   build:
@@ -12,19 +11,25 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build LaTeX and build images
+      - name: Build thesis
         uses: docker/build-push-action@v3
         with:
+          context: .
           push: false
           target: build-results
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           file: multi.Dockerfile
           outputs: type=local,dest=build-res
+          build-args: |
+            ENTRY_FILE=document
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
